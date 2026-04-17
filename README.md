@@ -7,8 +7,6 @@
 
 Bem-vindo ao **Catraca Touch**, um terminal digital interativo desenvolvido para academias que desejam agilizar e modernizar o processo de entrada de alunos. Com um design otimizado para tablets e quiosques touch-screen, o sistema permite a digitação do CPF em um teclado virtual intuitivo e realiza a validação em tempo real com a API de backend, informando imediatamente se o acesso está **liberado** ou **bloqueado**.
 
-![Preview do Sistema](https://via.placeholder.com/800x1200/1e1b4b/ffffff?text=Catraca+Touch+System)
-
 ---
 
 ## ✨ Demonstração Online
