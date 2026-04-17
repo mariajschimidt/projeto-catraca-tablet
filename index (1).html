@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Tablet Catraca | Movement Academy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-dark: #6d28d9;
+            --bg-dark: #090714;
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #1e1b4b, #090714);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Tablet Responsiveness */
+        .tablet-container {
+            background: rgba(20, 18, 38, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            width: 95%;
+            max-width: 450px; /* Ideal para proporção de tablets em pé */
+            max-height: 95vh;
+            border-radius: 3rem;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Efeito de Vidro no Display */
+        .display-cpf {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        /* Botões Estilizados */
+        .numpad-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 1.75rem;
+            font-weight: 500;
+            height: 75px;
+            border-radius: 1.25rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .numpad-btn:active {
+            background: var(--primary);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+            transform: scale(0.92);
+            border-color: transparent;
+        }
+
+        .btn-consultar {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            box-shadow: 0 10px 20px -5px rgba(109, 40, 217, 0.5);
+            font-weight: 700;
+            height: 80px;
+        }
+
+        /* Status Box */
+        .status-box {
+            min-height: 120px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Logo Animation */
+        .logo-glow {
+            text-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+<div class="tablet-container shadow-2xl">
+    <div class="text-center mb-8">
+        <div class="inline-block p-2 rounded-full bg-purple-500/10 mb-3">
+            <i class="fas fa-bolt text-purple-400 text-xl"></i>
+        </div>
+        <h1 class="text-2xl font-extrabold tracking-tighter logo-glow">MOVEMENT <span class="text-purple-400">ACADEMY</span></h1>
+        <div class="flex items-center justify-center gap-2 mt-1">
+            <span class="h-[1px] w-8 bg-purple-500/30"></span>
+            <p class="text-gray-400 text-[10px] uppercase tracking-[4px]">Check-in System</p>
+            <span class="h-[1px] w-8 bg-purple-500/30"></span>
+        </div>
+    </div>
+
+    <div id="display" class="display-cpf w-full py-5 text-center text-3xl font-bold rounded-2xl mb-8 text-white">
+        000.000.000-00
+    </div>
+
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        <button class="numpad-btn" onclick="addNum('1')">1</button>
+        <button class="numpad-btn" onclick="addNum('2')">2</button>
+        <button class="numpad-btn" onclick="addNum('3')">3</button>
+        
+        <button class="numpad-btn" onclick="addNum('4')">4</button>
+        <button class="numpad-btn" onclick="addNum('5')">5</button>
+        <button class="numpad-btn" onclick="addNum('6')">6</button>
+        
+        <button class="numpad-btn" onclick="addNum('7')">7</button>
+        <button class="numpad-btn" onclick="addNum('8')">8</button>
+        <button class="numpad-btn" onclick="addNum('9')">9</button>
+        
+        <button class="numpad-btn text-red-400/80 hover:text-red-400" onclick="limpar()">
+            <i class="fas fa-trash-alt text-xl"></i>
+        </button>
+        <button class="numpad-btn" onclick="addNum('0')">0</button>
+        <button class="numpad-btn text-purple-400/80 hover:text-purple-400" onclick="backspace()">
+            <i class="fas fa-backspace text-xl"></i>
+        </button>
+        
+        <div class="col-span-3">
+            <button onclick="consultarAcesso()" class="numpad-btn btn-consultar w-full mt-2 gap-3">
+                <i class="fas fa-fingerprint text-xl"></i> VALIDAR ACESSO
+            </button>
+        </div>
+    </div>
+
+    <div id="statusBox" class="status-box rounded-3xl p-5 flex flex-col items-center justify-center text-center bg-white/5 border border-white/10">
+        <div id="statusText" class="font-semibold text-sm tracking-widest text-gray-400 uppercase">Aguardando CPF</div>
+        <div id="statusSubtext" class="text-xs text-gray-500 mt-2 opacity-70">Posicione o tablet na altura dos olhos</div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'https://catraca-api.vercel.app';
+    let cpfAtual = "";
+
+    function updateDisplay() {
+        let mask = cpfAtual.padEnd(11, "0");
+        let formatted = mask.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+        document.getElementById('display').innerText = formatted;
+        
+        // Efeito visual quando digita
+        const display = document.getElementById('display');
+        display.style.transform = "scale(1.02)";
+        setTimeout(() => display.style.transform = "scale(1)", 100);
+    }
+
+    function addNum(num) {
+        if(cpfAtual.length < 11) {
+            cpfAtual += num;
+            updateDisplay();
+            // Se começou a digitar, reseta o status visualmente
+            if(cpfAtual.length === 1) resetStatus();
+        }
+    }
+
+    function backspace() {
+        cpfAtual = cpfAtual.slice(0, -1);
+        updateDisplay();
+    }
+
+    function limpar() {
+        cpfAtual = "";
+        updateDisplay();
+        resetStatus();
+    }
+
+    function resetStatus() {
+        const box = document.getElementById('statusBox');
+        const text = document.getElementById('statusText');
+        const sub = document.getElementById('statusSubtext');
+        
+        box.className = "status-box rounded-3xl p-5 flex flex-col items-center justify-center text-center bg-white/5 border border-white/10";
+        text.innerText = "DIGITE SEU CPF";
+        text.className = "font-semibold text-sm tracking-widest text-gray-400 uppercase";
+        sub.innerText = "Sistema de segurança ativo";
+    }
+
+    async function consultarAcesso() {
+        const box = document.getElementById('statusBox');
+        const text = document.getElementById('statusText');
+        const sub = document.getElementById('statusSubtext');
+
+        if (cpfAtual.length < 11) {
+            // Substituindo Alert por feedback no estilo do site
+            box.className = "status-box rounded-3xl p-5 flex flex-col items-center justify-center text-center bg-orange-500/10 border border-orange-500/30";
+            text.innerText = "CPF INCOMPLETO";
+            text.className = "font-bold text-orange-400";
+            sub.innerText = "Por favor, digite os 11 números.";
+            return;
+        }
+
+        text.innerText = "PROCESSANDO...";
+        text.className = "font-bold text-sm text-purple-400 animate-pulse";
+        sub.innerText = "Verificando credenciais...";
+
+        try {
+            const response = await fetch(`${API_URL}/acesso/${cpfAtual}`);
+            
+            if (response.status === 404) {
+                box.className = "status-box rounded-3xl p-5 flex flex-col items-center justify-center text-center bg-yellow-500/10 border border-yellow-500/30";
+                text.innerText = "NÃO ENCONTRADO";
+                text.className = "font-bold text-lg text-yellow-400";
+                sub.innerText = "Vá até a recepção para cadastrar.";
+            } else {
+                const data = await response.json();
+                
+                if (data.status === 'liberado') {
+                    box.className = "status-box rounded-3xl p-5 flex flex-col items-center justify-center text-center bg-green-500/20 border border-green-500/40 shadow-[0_0_20px_rgba(34,197,94,0.1)]";
+                    text.innerText = `BEM-VINDO, ${data.nome.split(' ')[0].toUpperCase()}!`;
+                    text.className = "font-bold text-xl text-green-400 tracking-tight";
+                    sub.innerText = "ACESSO LIBERADO. BOM TREINO!";
+                } else {
+                    box.className = "status-box rounded-3xl p-5 flex flex-col items-center justify-center text-center bg-red-500/10 border border-red-500/30";
+                    text.innerText = "ACESSO NEGADO";
+                    text.className = "font-bold text-lg text-red-400";
+                    sub.innerText = "Pendência detectada. Verifique na secretaria.";
+                }
+            }
+        } catch (error) {
+            box.className = "status-box rounded-3xl p-5 flex flex-col items-center justify-center text-center bg-red-900/20 border border-red-500/30";
+            text.innerText = "ERRO DE REDE";
+            text.className = "font-bold text-red-400";
+            sub.innerText = "Falha ao conectar com o servidor.";
+        }
+
+        setTimeout(limpar, 6000);
+    }
+
+    updateDisplay();
+</script>
+
+</body>
+</html>
