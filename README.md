@@ -13,7 +13,7 @@ Bem-vindo ao **Catraca Touch**, um terminal digital interativo desenvolvido para
 
 | Projeto | Link |
 |---------|------|
-| 🎫 **Catraca Touch (Frontend)** | *Em breve* |
+| 🎫 **Catraca Touch (Frontend)** | [projeto-catraca-tablet.vercel.app](https://projeto-catraca-tablet.vercel.app/) |
 | ⚙️ **Backend API** | [catraca-api.vercel.app](https://catraca-api.vercel.app) |
 
 > *O sistema consome a mesma API do painel administrativo, garantindo sincronização total dos dados.*
@@ -301,7 +301,7 @@ Este projeto está sob a licença **MIT**.
 
 | Recurso | Link |
 |---------|------|
-| 🎫 **Catraca Touch** | *Em breve* |
+| 🎫 **Catraca Touch** | [projeto-catraca-tablet.vercel.app](https://projeto-catraca-tablet.vercel.app/) |
 | 🖥️ **Admin Panel** | [projeto-catraca-adm.vercel.app](https://projeto-catraca-adm.vercel.app) |
 | ⚙️ **Backend API** | [catraca-api.vercel.app](https://catraca-api.vercel.app) |
 | 👨‍💻 **Backend Developer** | [github.com/fonseca-felix](https://github.com/fonseca-felix) |
