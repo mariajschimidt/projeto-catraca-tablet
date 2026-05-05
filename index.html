@@ -134,48 +134,213 @@
 </div>
 
 <script>
-    // Mantive sua lógica de script original, apenas integrei ao novo layout
-    let cpfAtual = "";
-    const API_URL = 'https://catraca-api.vercel.app';
+        let cpfAtual = "";
+        const API_URL = 'https://catraca-api.vercel.app';
 
-    function updateDisplay() {
-        let mask = cpfAtual.padEnd(11, "0");
-        let formatted = mask.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-        document.getElementById('display').innerText = formatted;
-    }
-
-    function addNum(num) {
-        if(cpfAtual.length < 11) {
-            cpfAtual += num;
-            updateDisplay();
+        function updateDisplay() {
+            let mask = cpfAtual.padEnd(11, "0");
+            let formatted = mask.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+            document.getElementById('display').innerText = formatted;
         }
-    }
 
-    function backspace() {
-        cpfAtual = cpfAtual.slice(0, -1);
-        updateDisplay();
-    }
+        function addNum(num) {
+            if(cpfAtual.length < 11) {
+                cpfAtual += num;
+                updateDisplay();
+                
+                // Consulta automaticamente quando completar 11 dígitos
+                if(cpfAtual.length === 11) {
+                    consultarAcesso();
+                }
+            }
+        }
 
-    function limpar() {
-        cpfAtual = "";
-        updateDisplay();
+        function backspace() {
+            cpfAtual = cpfAtual.slice(0, -1);
+            updateDisplay();
+            resetStatus();
+        }
+
+        function limpar() {
+            cpfAtual = "";
+            updateDisplay();
+            resetStatus();
+        }
+
+        function resetStatus() {
+            const text = document.getElementById('statusText');
+            const sub = document.getElementById('statusSubtext');
+            const container = document.getElementById('statusContainer');
+            
+            text.innerText = "AGUARDANDO CPF";
+            sub.innerText = "Digite os 11 dígitos do seu CPF";
+            
+            // Remove todas as classes de status
+            container.classList.remove('liberado', 'bloqueado', 'erro', 'consulting');
+            container.classList.add('waiting');
+        }
+
+        async function consultarAcesso() {
+            if (cpfAtual.length < 11) {
+                showTemporaryMessage("⚠️ CPF incompleto!", "Digite os 11 dígitos do CPF", "erro");
+                return;
+            }
+            
+            const text = document.getElementById('statusText');
+            const sub = document.getElementById('statusSubtext');
+            const container = document.getElementById('statusContainer');
+            
+            text.innerText = "CONSULTANDO...";
+            sub.innerText = "Verificando acesso...";
+            container.classList.remove('liberado', 'bloqueado', 'erro', 'waiting');
+            container.classList.add('consulting');
+            
+            try {
+                // CORREÇÃO IMPORTANTE: Usando a rota /acesso/ em vez de /alunos/
+                const response = await fetch(`${API_URL}/acesso/${cpfAtual}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                // Remove classe de consulta
+                container.classList.remove('consulting');
+                
+                // Tratamento baseado no status code
+                if (response.status === 200 && data.acesso === true) {
+                    // Acesso liberado
+                    text.innerHTML = "✅ ACESSO LIBERADO";
+                    sub.innerHTML = `Bem-vindo(a), ${data.nome || 'Usuário'}! ${data.mensagem || 'Aproveite seu treino!'}`;
+                    container.classList.add('liberado');
+                    
+                    // Tocar som de liberação (opcional)
+                    playSound('success');
+                    
+                    // Limpar CPF após 3 segundos para próxima pessoa
+                    setTimeout(() => {
+                        if(cpfAtual) {
+                            limpar();
+                        }
+                    }, 3000);
+                    
+                } else if (response.status === 403) {
+                    // Acesso negado/bloqueado
+                    text.innerHTML = "⛔ ACESSO BLOQUEADO";
+                    sub.innerHTML = data.mensagem || "Seu acesso está bloqueado. Procure a secretaria.";
+                    container.classList.add('bloqueado');
+                    playSound('error');
+                    
+                } else if (response.status === 404) {
+                    // CPF não cadastrado
+                    text.innerHTML = "❌ CPF NÃO CADASTRADO";
+                    sub.innerHTML = data.mensagem || "Este CPF não está registrado no sistema. Procure a secretaria.";
+                    container.classList.add('erro');
+                    playSound('error');
+                    
+                } else if (response.status === 400) {
+                    // CPF inválido
+                    text.innerHTML = "⚠️ CPF INVÁLIDO";
+                    sub.innerHTML = data.mensagem || "Digite um CPF válido com 11 dígitos.";
+                    container.classList.add('erro');
+                    playSound('error');
+                    
+                } else if (response.status === 503) {
+                    // Serviço indisponível
+                    text.innerHTML = "⚠️ SISTEMA INDISPONÍVEL";
+                    sub.innerHTML = "Sistema temporariamente offline. Procure a secretaria.";
+                    container.classList.add('erro');
+                    playSound('error');
+                    
+                } else {
+                    // Outros erros
+                    throw new Error(`HTTP ${response.status}: ${data.mensagem || 'Erro desconhecido'}`);
+                }
+                
+            } catch (error) {
+                console.error('Erro na consulta:', error);
+                container.classList.remove('consulting');
+                text.innerHTML = "⚠️ ERRO DE CONEXÃO";
+                sub.innerHTML = "Não foi possível conectar ao servidor. Verifique sua internet.";
+                container.classList.add('erro');
+                playSound('error');
+            }
+        }
+        
+        // Função para mostrar mensagem temporária
+        function showTemporaryMessage(title, message, type) {
+            const text = document.getElementById('statusText');
+            const sub = document.getElementById('statusSubtext');
+            const container = document.getElementById('statusContainer');
+            
+            text.innerHTML = title;
+            sub.innerHTML = message;
+            
+            container.classList.remove('liberado', 'bloqueado', 'erro', 'waiting', 'consulting');
+            
+            if(type === 'erro') {
+                container.classList.add('erro');
+            } else if(type === 'sucesso') {
+                container.classList.add('liberado');
+            }
+            
+            setTimeout(() => {
+                if(cpfAtual.length === 0) {
+                    resetStatus();
+                }
+            }, 3000);
+        }
+        
+        // Função para tocar sons (opcional)
+        function playSound(type) {
+            try {
+                // Sons opcionais - você pode adicionar arquivos de áudio
+                if(type === 'success') {
+                    // Tocar bip de sucesso
+                    const audio = new Audio('data:audio/wav;base64,U3RlcmVvZmY='); // Som simples
+                    audio.play().catch(e => console.log('Áudio não disponível'));
+                } else if(type === 'error') {
+                    // Tocar bip de erro
+                    const audio = new Audio('data:audio/wav;base64,U3RlcmVvZmY=');
+                    audio.play().catch(e => console.log('Áudio não disponível'));
+                }
+            } catch(e) {
+                console.log('Reprodução de áudio não suportada');
+            }
+        }
+        
+        // Suporte para teclado físico
+        document.addEventListener('keydown', (e) => {
+            // Números 0-9 (teclado principal e numérico)
+            if((e.key >= '0' && e.key <= '9') || (e.key >= 'Num0' && e.key <= 'Num9')) {
+                let num = e.key.replace('Num', '');
+                addNum(num);
+                e.preventDefault();
+            }
+            // Backspace
+            else if(e.key === 'Backspace' || e.key === 'Delete') {
+                backspace();
+                e.preventDefault();
+            }
+            // Enter para consultar
+            else if(e.key === 'Enter') {
+                if(cpfAtual.length > 0) {
+                    consultarAcesso();
+                }
+                e.preventDefault();
+            }
+            // Escape para limpar
+            else if(e.key === 'Escape') {
+                limpar();
+                e.preventDefault();
+            }
+        });
+        
+        // Inicialização
         resetStatus();
-    }
-
-    function resetStatus() {
-        const text = document.getElementById('statusText');
-        const sub = document.getElementById('statusSubtext');
-        text.innerText = "AGUARDANDO CPF";
-        sub.innerText = "Digite os 11 dígitos do seu CPF";
-    }
-
-    async function consultarAcesso() {
-        if (cpfAtual.length < 11) return;
-        const text = document.getElementById('statusText');
-        text.innerText = "CONSULTANDO...";
-        // Simulação de fetch (adicione sua lógica de API aqui conforme o código anterior)
-    }
-</script>
+    </script>
 
 </body>
 </html>
