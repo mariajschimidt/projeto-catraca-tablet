@@ -268,9 +268,9 @@ const aluno = await response.json();
   
 | Função | Nome | Perfil | Projeto |
 |--------|------|--------|---------|
-| **🎨 Frontend, UI/UX, Catraca Touch** | — (Você) | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/seu-usuario) | Catraca Touch |
+| **🎨 Frontend, UI/UX, Catraca Touch** | [mariajschimidt](https://github.com/mariajschimidt) | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/seu-usuario) | Catraca Touch |
 | **⚙️ Backend, API, Banco de Dados** | [fonseca-felix](https://github.com/fonseca-felix) | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/fonseca-felix) | [catraca-api.vercel.app](https://catraca-api.vercel.app) |
-| **🖥️ Painel Administrativo** | — (Você) | [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://projeto-catraca-adm.vercel.app) | Admin Console |
+| **🖥️ Painel Administrativo** | [mariajschimidt](https://github.com/mariajschimidt) | [![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://projeto-catraca-adm.vercel.app) | Admin Console |
 
 </div>
 
