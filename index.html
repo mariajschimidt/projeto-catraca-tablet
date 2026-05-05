@@ -11,12 +11,15 @@
         :root {
             --primary: #8b5cf6;
             --primary-dark: #6d28d9;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
         }
 
         body {
             background: radial-gradient(circle at top right, #1e1b4b, #090714);
             height: 100vh;
-            height: 100dvh; /* Altura dinâmica para mobile */
+            height: 100dvh;
             color: white;
             display: flex;
             align-items: center;
@@ -24,7 +27,7 @@
             font-family: 'Outfit', sans-serif;
             margin: 0;
             padding: 15px;
-            overflow: hidden; /* Impede rolagem da página */
+            overflow: hidden;
         }
 
         .tablet-container {
@@ -33,8 +36,8 @@
             border: 1px solid rgba(139, 92, 246, 0.2);
             width: 100%;
             max-width: 440px;
-            height: 100%; /* Ocupa a altura máxima permitida */
-            max-height: 850px; /* Limite para não ficar gigante em telas enormes */
+            height: 100%;
+            max-height: 850px;
             border-radius: 2.5rem;
             padding: 2rem 1.5rem;
             display: flex;
@@ -48,14 +51,15 @@
             border: 1px solid rgba(139, 92, 246, 0.4);
             font-size: clamp(1.5rem, 5vh, 2.2rem);
             padding: 1.2rem;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
         }
 
-        /* Numpad que se expande para ocupar o espaço */
         .grid-numpad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 0.75rem;
-            flex-grow: 1; /* Faz o teclado ocupar o espaço central */
+            flex-grow: 1;
         }
 
         .numpad-btn {
@@ -67,6 +71,10 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+            min-height: 70px;
         }
 
         .numpad-btn:active {
@@ -74,7 +82,6 @@
             transform: scale(0.95);
         }
 
-        /* Botão de Validar Fixo e Adaptável */
         .btn-consultar {
             grid-column: span 3;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -82,15 +89,63 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             border-radius: 1.25rem;
-            min-height: 80px; /* Garante que o botão seja grande e fácil de clicar */
+            min-height: 80px;
             font-size: 1.1rem;
             box-shadow: 0 10px 20px -5px rgba(109, 40, 217, 0.5);
         }
 
         .status-box {
-            min-height: 90px;
+            min-height: 100px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        /* Estados do status */
+        .status-box.liberado {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--success);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .status-box.bloqueado {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--error);
+        }
+
+        .status-box.erro {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--warning);
+        }
+
+        .status-box.consulting {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: var(--primary);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .status-text {
+            transition: all 0.3s ease;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -122,225 +177,343 @@
         <button class="numpad-btn" onclick="addNum('0')">0</button>
         <button class="numpad-btn text-purple-400" onclick="backspace()"><i class="fas fa-backspace"></i></button>
         
-        <button onclick="consultarAcesso()" class="numpad-btn btn-consultar flex gap-3">
+        <button onclick="consultarAcesso()" class="numpad-btn btn-consultar flex gap-3 items-center justify-center">
             <i class="fas fa-fingerprint text-2xl"></i> Validar Acesso
         </button>
     </div>
 
     <div id="statusBox" class="status-box rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+        <div id="statusIcon" class="text-3xl mb-2">🔄</div>
         <div id="statusText" class="font-semibold text-xs tracking-widest text-gray-400 uppercase">Aguardando CPF</div>
-        <div id="statusSubtext" class="text-[10px] text-gray-500 mt-1">Digite os 11 dígitos do seu CPF</div>
+        <div id="statusSubtext" class="text-[11px] text-gray-500 mt-1">Digite os 11 dígitos do seu CPF</div>
     </div>
 </div>
 
 <script>
-        let cpfAtual = "";
-        const API_URL = 'https://catraca-api.vercel.app';
+    let cpfAtual = "";
+    const API_URL = 'https://catraca-api.vercel.app'; // Altere para sua URL se necessário
+    let estaConsultando = false;
 
-        function updateDisplay() {
-            let mask = cpfAtual.padEnd(11, "0");
-            let formatted = mask.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-            document.getElementById('display').innerText = formatted;
+    function updateDisplay() {
+        let mask = cpfAtual.padEnd(11, "0");
+        let formatted = mask.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+        const displayElement = document.getElementById('display');
+        if (displayElement) {
+            displayElement.innerText = formatted;
         }
+    }
 
-        function addNum(num) {
-            if(cpfAtual.length < 11) {
-                cpfAtual += num;
-                updateDisplay();
-                
-                // Consulta automaticamente quando completar 11 dígitos
-                if(cpfAtual.length === 11) {
-                    consultarAcesso();
-                }
-            }
-        }
-
-        function backspace() {
-            cpfAtual = cpfAtual.slice(0, -1);
+    function addNum(num) {
+        if(estaConsultando) return; // Não permite digitar durante consulta
+        
+        if(cpfAtual.length < 11) {
+            cpfAtual += num;
             updateDisplay();
-            resetStatus();
-        }
-
-        function limpar() {
-            cpfAtual = "";
-            updateDisplay();
-            resetStatus();
-        }
-
-        function resetStatus() {
-            const text = document.getElementById('statusText');
-            const sub = document.getElementById('statusSubtext');
-            const container = document.getElementById('statusContainer');
             
-            text.innerText = "AGUARDANDO CPF";
-            sub.innerText = "Digite os 11 dígitos do seu CPF";
-            
-            // Remove todas as classes de status
-            container.classList.remove('liberado', 'bloqueado', 'erro', 'consulting');
-            container.classList.add('waiting');
-        }
-
-        async function consultarAcesso() {
-            if (cpfAtual.length < 11) {
-                showTemporaryMessage("⚠️ CPF incompleto!", "Digite os 11 dígitos do CPF", "erro");
-                return;
+            // Consulta automaticamente quando completar 11 dígitos
+            if(cpfAtual.length === 11) {
+                consultarAcesso();
+            } else {
+                resetStatus();
             }
-            
-            const text = document.getElementById('statusText');
-            const sub = document.getElementById('statusSubtext');
-            const container = document.getElementById('statusContainer');
-            
-            text.innerText = "CONSULTANDO...";
-            sub.innerText = "Verificando acesso...";
-            container.classList.remove('liberado', 'bloqueado', 'erro', 'waiting');
-            container.classList.add('consulting');
-            
-            try {
-                // CORREÇÃO IMPORTANTE: Usando a rota /acesso/ em vez de /alunos/
-                const response = await fetch(`${API_URL}/acesso/${cpfAtual}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const data = await response.json();
-                
-                // Remove classe de consulta
-                container.classList.remove('consulting');
-                
-                // Tratamento baseado no status code
-                if (response.status === 200 && data.acesso === true) {
-                    // Acesso liberado
-                    text.innerHTML = "✅ ACESSO LIBERADO";
-                    sub.innerHTML = `Bem-vindo(a), ${data.nome || 'Usuário'}! ${data.mensagem || 'Aproveite seu treino!'}`;
-                    container.classList.add('liberado');
-                    
-                    // Tocar som de liberação (opcional)
-                    playSound('success');
-                    
-                    // Limpar CPF após 3 segundos para próxima pessoa
-                    setTimeout(() => {
-                        if(cpfAtual) {
-                            limpar();
-                        }
-                    }, 3000);
-                    
-                } else if (response.status === 403) {
-                    // Acesso negado/bloqueado
-                    text.innerHTML = "⛔ ACESSO BLOQUEADO";
-                    sub.innerHTML = data.mensagem || "Seu acesso está bloqueado. Procure a secretaria.";
-                    container.classList.add('bloqueado');
-                    playSound('error');
-                    
-                } else if (response.status === 404) {
-                    // CPF não cadastrado
-                    text.innerHTML = "❌ CPF NÃO CADASTRADO";
-                    sub.innerHTML = data.mensagem || "Este CPF não está registrado no sistema. Procure a secretaria.";
-                    container.classList.add('erro');
-                    playSound('error');
-                    
-                } else if (response.status === 400) {
-                    // CPF inválido
-                    text.innerHTML = "⚠️ CPF INVÁLIDO";
-                    sub.innerHTML = data.mensagem || "Digite um CPF válido com 11 dígitos.";
-                    container.classList.add('erro');
-                    playSound('error');
-                    
-                } else if (response.status === 503) {
-                    // Serviço indisponível
-                    text.innerHTML = "⚠️ SISTEMA INDISPONÍVEL";
-                    sub.innerHTML = "Sistema temporariamente offline. Procure a secretaria.";
-                    container.classList.add('erro');
-                    playSound('error');
-                    
-                } else {
-                    // Outros erros
-                    throw new Error(`HTTP ${response.status}: ${data.mensagem || 'Erro desconhecido'}`);
-                }
-                
-            } catch (error) {
-                console.error('Erro na consulta:', error);
-                container.classList.remove('consulting');
-                text.innerHTML = "⚠️ ERRO DE CONEXÃO";
-                sub.innerHTML = "Não foi possível conectar ao servidor. Verifique sua internet.";
-                container.classList.add('erro');
-                playSound('error');
-            }
+        }
+    }
+
+    function backspace() {
+        if(estaConsultando) return;
+        
+        cpfAtual = cpfAtual.slice(0, -1);
+        updateDisplay();
+        resetStatus();
+    }
+
+    function limpar() {
+        if(estaConsultando) return;
+        
+        cpfAtual = "";
+        updateDisplay();
+        resetStatus();
+    }
+
+    function resetStatus() {
+        const text = document.getElementById('statusText');
+        const sub = document.getElementById('statusSubtext');
+        const icon = document.getElementById('statusIcon');
+        const box = document.getElementById('statusBox');
+        
+        if (text) text.innerText = "AGUARDANDO CPF";
+        if (sub) sub.innerText = "Digite os 11 dígitos do seu CPF";
+        if (icon) icon.innerHTML = "🔄";
+        
+        if (box) {
+            box.classList.remove('liberado', 'bloqueado', 'erro', 'consulting');
+        }
+    }
+
+    async function consultarAcesso() {
+        if (estaConsultando) return;
+        
+        if (cpfAtual.length < 11) {
+            showTemporaryMessage("⚠️ CPF INCOMPLETO", `Faltam ${11 - cpfAtual.length} dígito(s). Digite todos os 11 números.`, "erro");
+            return;
         }
         
-        // Função para mostrar mensagem temporária
-        function showTemporaryMessage(title, message, type) {
-            const text = document.getElementById('statusText');
-            const sub = document.getElementById('statusSubtext');
-            const container = document.getElementById('statusContainer');
+        const text = document.getElementById('statusText');
+        const sub = document.getElementById('statusSubtext');
+        const icon = document.getElementById('statusIcon');
+        const box = document.getElementById('statusBox');
+        
+        if (!text || !sub || !icon || !box) return;
+        
+        estaConsultando = true;
+        
+        text.innerText = "CONSULTANDO...";
+        sub.innerText = "Verificando acesso no sistema";
+        icon.innerHTML = '<div class="loading-spinner"></div>';
+        box.classList.remove('liberado', 'bloqueado', 'erro');
+        box.classList.add('consulting');
+        
+        try {
+            const response = await fetch(`${API_URL}/acesso/${cpfAtual}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
             
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = { mensagem: "Erro ao processar resposta do servidor" };
+            }
+            
+            box.classList.remove('consulting');
+            
+            // Tratamento baseado no status code
+            if (response.status === 200 && data.acesso === true) {
+                // Acesso liberado
+                text.innerHTML = "✅ ACESSO LIBERADO";
+                sub.innerHTML = `Bem-vindo(a), ${data.nome || 'Usuário'}! ${data.mensagem || 'Aproveite seu treino!'}`;
+                icon.innerHTML = "✅";
+                box.classList.add('liberado');
+                
+                playSound('success');
+                
+                // Limpar CPF após 3 segundos
+                setTimeout(() => {
+                    if(cpfAtual && !estaConsultando) {
+                        limpar();
+                    }
+                    estaConsultando = false;
+                }, 3000);
+                
+            } else if (response.status === 403) {
+                text.innerHTML = "⛔ ACESSO BLOQUEADO";
+                sub.innerHTML = data.mensagem || "Seu acesso está bloqueado. Procure a secretaria.";
+                icon.innerHTML = "⛔";
+                box.classList.add('bloqueado');
+                playSound('error');
+                estaConsultando = false;
+                
+            } else if (response.status === 404) {
+                text.innerHTML = "❌ CPF NÃO CADASTRADO";
+                sub.innerHTML = data.mensagem || "Este CPF não está registrado no sistema. Procure a secretaria para se cadastrar.";
+                icon.innerHTML = "❌";
+                box.classList.add('erro');
+                playSound('error');
+                estaConsultando = false;
+                
+            } else if (response.status === 400) {
+                text.innerHTML = "⚠️ CPF INVÁLIDO";
+                sub.innerHTML = data.mensagem || "Digite um CPF válido com 11 dígitos.";
+                icon.innerHTML = "⚠️";
+                box.classList.add('erro');
+                playSound('error');
+                estaConsultando = false;
+                
+            } else if (response.status === 503) {
+                text.innerHTML = "⚠️ SISTEMA INDISPONÍVEL";
+                sub.innerHTML = data.mensagem || "Sistema temporariamente offline. Procure a secretaria pessoalmente.";
+                icon.innerHTML = "⚠️";
+                box.classList.add('erro');
+                playSound('error');
+                estaConsultando = false;
+                
+            } else {
+                text.innerHTML = "⚠️ ERRO NA CONSULTA";
+                sub.innerHTML = `Erro ${response.status}: ${data.mensagem || data.error || 'Tente novamente mais tarde'}`;
+                icon.innerHTML = "⚠️";
+                box.classList.add('erro');
+                playSound('error');
+                estaConsultando = false;
+            }
+            
+        } catch (error) {
+            console.error('Erro detalhado na consulta:', error);
+            
+            if (box) {
+                box.classList.remove('consulting');
+            }
+            
+            if (text && sub && icon) {
+                text.innerHTML = "⚠️ ERRO DE CONEXÃO";
+                sub.innerHTML = "Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.";
+                icon.innerHTML = "⚠️";
+            }
+            
+            if (box) {
+                box.classList.add('erro');
+            }
+            
+            playSound('error');
+            estaConsultando = false;
+        }
+    }
+    
+    // Função para mostrar mensagem temporária
+    function showTemporaryMessage(title, message, type) {
+        const text = document.getElementById('statusText');
+        const sub = document.getElementById('statusSubtext');
+        const icon = document.getElementById('statusIcon');
+        const box = document.getElementById('statusBox');
+        
+        if (text && sub && icon && box) {
             text.innerHTML = title;
             sub.innerHTML = message;
             
-            container.classList.remove('liberado', 'bloqueado', 'erro', 'waiting', 'consulting');
-            
             if(type === 'erro') {
-                container.classList.add('erro');
+                icon.innerHTML = "⚠️";
+                box.classList.add('erro');
             } else if(type === 'sucesso') {
-                container.classList.add('liberado');
+                icon.innerHTML = "✅";
+                box.classList.add('liberado');
             }
             
             setTimeout(() => {
-                if(cpfAtual.length === 0) {
+                if(cpfAtual.length === 0 && !estaConsultando) {
                     resetStatus();
                 }
             }, 3000);
         }
-        
-        // Função para tocar sons (opcional)
-        function playSound(type) {
-            try {
-                // Sons opcionais - você pode adicionar arquivos de áudio
-                if(type === 'success') {
-                    // Tocar bip de sucesso
-                    const audio = new Audio('data:audio/wav;base64,U3RlcmVvZmY='); // Som simples
-                    audio.play().catch(e => console.log('Áudio não disponível'));
-                } else if(type === 'error') {
-                    // Tocar bip de erro
-                    const audio = new Audio('data:audio/wav;base64,U3RlcmVvZmY=');
-                    audio.play().catch(e => console.log('Áudio não disponível'));
+    }
+    
+    // Função para tocar sons
+    function playSound(type) {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                const audioCtx = new AudioContext();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.type = 'sine';
+                
+                if (type === 'success') {
+                    oscillator.frequency.value = 880;
+                    gainNode.gain.value = 0.3;
+                    oscillator.start();
+                    gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                } else if (type === 'error') {
+                    oscillator.frequency.value = 440;
+                    gainNode.gain.value = 0.3;
+                    oscillator.start();
+                    gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+                    oscillator.stop(audioCtx.currentTime + 0.3);
                 }
-            } catch(e) {
-                console.log('Reprodução de áudio não suportada');
             }
+        } catch(e) {
+            console.log('Áudio não suportado:', e);
+        }
+    }
+    
+    // Suporte para teclado físico
+    document.addEventListener('keydown', (e) => {
+        if(estaConsultando) return;
+        
+        const teclasPermitidas = ['0','1','2','3','4','5','6','7','8','9','Backspace','Delete','Enter','Escape'];
+        if (!teclasPermitidas.includes(e.key) && !e.key.startsWith('Num')) {
+            return;
         }
         
-        // Suporte para teclado físico
-        document.addEventListener('keydown', (e) => {
-            // Números 0-9 (teclado principal e numérico)
-            if((e.key >= '0' && e.key <= '9') || (e.key >= 'Num0' && e.key <= 'Num9')) {
-                let num = e.key.replace('Num', '');
-                addNum(num);
-                e.preventDefault();
+        if ((e.key >= '0' && e.key <= '9')) {
+            addNum(e.key);
+            e.preventDefault();
+        } else if (e.key.startsWith('Num') && e.key.length === 4) {
+            const num = e.key.charAt(3);
+            addNum(num);
+            e.preventDefault();
+        }
+        else if (e.key === 'Backspace' || e.key === 'Delete') {
+            backspace();
+            e.preventDefault();
+        }
+        else if (e.key === 'Enter') {
+            if (cpfAtual.length === 11) {
+                consultarAcesso();
+            } else if (cpfAtual.length > 0 && cpfAtual.length < 11) {
+                showTemporaryMessage("⚠️ CPF INCOMPLETO", `Faltam ${11 - cpfAtual.length} dígito(s).`, "erro");
             }
-            // Backspace
-            else if(e.key === 'Backspace' || e.key === 'Delete') {
-                backspace();
-                e.preventDefault();
-            }
-            // Enter para consultar
-            else if(e.key === 'Enter') {
-                if(cpfAtual.length > 0) {
-                    consultarAcesso();
-                }
-                e.preventDefault();
-            }
-            // Escape para limpar
-            else if(e.key === 'Escape') {
-                limpar();
-                e.preventDefault();
-            }
-        });
+            e.preventDefault();
+        }
+        else if (e.key === 'Escape') {
+            limpar();
+            e.preventDefault();
+        }
+    });
+    
+    // Suporte para leitor de cartão
+    let cartaoBuffer = "";
+    let timeoutCartao = null;
+    
+    document.addEventListener('keypress', (e) => {
+        if(estaConsultando) return;
         
-        // Inicialização
+        if (e.key >= '0' && e.key <= '9') {
+            cartaoBuffer += e.key;
+            
+            if (timeoutCartao) clearTimeout(timeoutCartao);
+            
+            if (cartaoBuffer.length === 11) {
+                cpfAtual = cartaoBuffer;
+                updateDisplay();
+                consultarAcesso();
+                cartaoBuffer = "";
+            } else {
+                timeoutCartao = setTimeout(() => {
+                    cartaoBuffer = "";
+                }, 500);
+            }
+        }
+    });
+    
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
         resetStatus();
-    </script>
+        document.body.click();
+        console.log("✅ Sistema da Catraca inicializado!");
+        console.log("📡 API URL:", API_URL);
+    });
+    
+    // Teste de conexão com a API
+    setTimeout(async () => {
+        try {
+            const response = await fetch(`${API_URL}/`);
+            if (response.ok) {
+                console.log("✅ API conectada com sucesso!");
+            } else {
+                console.warn("⚠️ API retornou status:", response.status);
+            }
+        } catch (error) {
+            console.error("❌ Erro ao conectar com API:", error);
+        }
+    }, 1000);
+</script>
 
 </body>
 </html>
